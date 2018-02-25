@@ -10,6 +10,8 @@ int login(string user);
 void logout();
 int grant(string user, bool grant, string table);
 int createUser(string name);
+int searchVectorForUser(string key, vector<string> vec);
+int searchVectorForUserAndTable(string name, string table, vector<string> names, vector<string> tables)
 
 string loggedUser; //user we are logged in as
 vector<string> allUsers; //keep track of all users - no duplicates
@@ -75,7 +77,15 @@ void performAction()
  * */
 int login(const string user)
 {
-
+    int loc = searchVectorForUser(user, allUsers);
+    if(loc == -1) //if user isn't found, return an error
+    {
+        return -1;
+    }
+    else
+    {
+        loggedUser = allUsers[loc]; //update logged in user name
+    }
     return 0; //success
 }
 
@@ -95,6 +105,27 @@ void logout()
  * */
 int grant(string user, bool grant, string table)
 {
+    //check if current user has granting ability
+    int loc = searchVectorForUserAndTable(loggedUser, table, assignedUsers, assignedTables);
+    if(loc == -1 || !hasGrantAccess[loc]){
+        //error -- user is not able to grant for this table
+        cout << "User " << loggedUser << " cannot grant access to table " << table << endl;
+        return -1;
+    }
+
+    //check if grantee is in the forbidden list for this table
+    loc = searchVectorForUserAndTable(user, table, forbiddenUsers, forbiddenTables);
+    if(loc != -1) //if we find the user in the forbidden list, we can't grant access
+    {
+        cout << "User " << user << " was found in the forbidden list." << endl;
+        return -1;
+    }
+
+    //if we make it this far, the user is able to be added to the assigned list; add them
+    assignedUsers.push_back(user);
+    assignedTables.push_back(table);
+    hasGrantAccess.push_back(grant);
+    granter.push_back(loggedUser);
 
     return 0; //success
 }
@@ -107,13 +138,36 @@ int grant(string user, bool grant, string table)
 int createUser(string name)
 {
     //search vector
-    for(int i = 0; i < allUsers.size(); i++) {
-        if (name.compare(allUsers[i]) == 0) // if we find a match, this user already exists and we can't create them
-        {
-            return -1;
-        }
+    if(searchVectorForUser(name, allUsers) != -1) //if the user name exists already, we can't create the user
+    {
+        return -1;
     }
-    //if we make it through the for loop, the user doesn't exist--add them
+    //if we make it through the search, the user doesn't exist--add them
     allUsers.push_back(name);
     return 0; //success
+}
+
+//search a vector for a key; return the location or -1 if not found
+int searchVectorForUser(string key, vector<string> vec)
+{
+    for(int i = 0; i < vec.size(); i++)
+    {
+        if(key == vec[i])
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int searchVectorForUserAndTable(string name, string table, vector<string> names, vector<string> tables)
+{
+    for(int i = 0; i < names.size(); i++)
+    {
+        if(name == names[i] && table == tables[i])
+        {
+            return i;
+        }
+    }
+    return -1;
 }
