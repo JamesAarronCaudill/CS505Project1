@@ -106,20 +106,14 @@ int grant(string user, bool grant, string table)
  * */
 int createUser(string name)
 {
-    bool exists = false;
     //search vector
-    for(int i = 0; i < allUsers.size(); i++)
-    {
-        if(name.compare(allUsers[i]) == 0) // if we find a match, this user already exists and we can't create them
+    for(int i = 0; i < allUsers.size(); i++) {
+        if (name.compare(allUsers[i]) == 0) // if we find a match, this user already exists and we can't create them
         {
-            exists = true;
             return -1;
         }
     }
-
-    if(!exists)
-    {
-        allUsers.push_back(name);
-    }
-    return 0;
+    //if we make it through the for loop, the user doesn't exist--add them
+    allUsers.push_back(name);
+    return 0; //success
 }
