@@ -16,6 +16,7 @@ int searchVectorForUser(string key, vector<string> vec);
 int searchVectorForUserAndTable(string name, string table, vector<string> names, vector<string> tables);
 bool checkSecurityOfficer(string name);
 
+//TODO: implement security officer capabilities?
 
 string loggedUser; //user we are logged in as
 vector<string> allUsers; //keep track of all users - no duplicates
@@ -40,6 +41,7 @@ int main() {
 
     cout << "Welcome! Commands understood are: \n LOGIN \n LOGOUT \n GRANT \n CREATEUSER"
             << "\nType EXIT to leave.\nPlease enter your first command.\n";
+    //TODO: add a CREATETABLE option? (user becomes owner & can grant access)
 
     //while user doesn't want to quit, take input and process the command
     do
@@ -72,8 +74,6 @@ void parseInput(const string str, vector<string>& vec)
     {
         vec.push_back(buf);
     }
-    //TODO: parse the input
-
 }
 
 
@@ -132,8 +132,7 @@ void performAction(vector<string> input) {
         else SO = false;
         createUser(name, SO);
     }
-    cin.ignore(256, '\n'); //since we are mixing cin and getline
-
+    cin.ignore(256, '\n'); //since we are mixing cin and getline, we need to throw out the \n that remains
 }
 
 /*
