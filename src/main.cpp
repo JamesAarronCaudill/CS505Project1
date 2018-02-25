@@ -4,6 +4,7 @@
 
 using namespace std;
 
+// Supporting functions:
 void parseInput(string str, vector<string>& vec);
 void performAction();
 int login(string user);
@@ -11,10 +12,13 @@ void logout();
 int grant(string user, bool grant, string table);
 int createUser(string name);
 int searchVectorForUser(string key, vector<string> vec);
-int searchVectorForUserAndTable(string name, string table, vector<string> names, vector<string> tables)
+int searchVectorForUserAndTable(string name, string table, vector<string> names, vector<string> tables);
+bool checkSecurityOfficer(string name);
+
 
 string loggedUser; //user we are logged in as
 vector<string> allUsers; //keep track of all users - no duplicates
+vector<bool> isSecurityOfficer; //keep track of the users who are security officers; corresponds with allUsers
 
 /* To produce the forbidden table we use the following vectors: */
 vector<string> forbiddenUsers;
@@ -46,6 +50,12 @@ int main() {
 
     return 0;
 }
+
+
+
+/***********************
+ * Supporting functions:
+ ************************/
 
 /*
  * Split the string we have on spaces;
@@ -133,9 +143,10 @@ int grant(string user, bool grant, string table)
 
 /*
  * Create a new user
+ * May or may not be a security officer
  * Returns false if a user with this name already exists
  * */
-int createUser(string name)
+int createUser(string name, bool isSecOff)
 {
     //search vector
     if(searchVectorForUser(name, allUsers) != -1) //if the user name exists already, we can't create the user
@@ -144,6 +155,7 @@ int createUser(string name)
     }
     //if we make it through the search, the user doesn't exist--add them
     allUsers.push_back(name);
+    isSecurityOfficer.push_back(isSecOff);
     return 0; //success
 }
 
@@ -170,4 +182,10 @@ int searchVectorForUserAndTable(string name, string table, vector<string> names,
         }
     }
     return -1;
+}
+
+bool checkSecurityOfficer(string name)
+{
+    int loc = searchVectorForUser(name, allUsers);
+    return isSecurityOfficer[loc];
 }
