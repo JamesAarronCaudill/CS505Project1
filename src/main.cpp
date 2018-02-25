@@ -1,16 +1,17 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
 
 using namespace std;
 
 // Supporting functions:
 void parseInput(string str, vector<string>& vec);
-void performAction();
+void performAction(vector<string> input);
 int login(string user);
 void logout();
 int grant(string user, bool grant, string table);
-int createUser(string name);
+int createUser(string name, bool isSecOff);
 int searchVectorForUser(string key, vector<string> vec);
 int searchVectorForUserAndTable(string name, string table, vector<string> names, vector<string> tables);
 bool checkSecurityOfficer(string name);
@@ -43,9 +44,10 @@ int main() {
     //while user doesn't want to quit, take input and process the command
     do
     {
+        cout << "Enter another command: " << endl;
         getline(cin, cmd); //get the line of input to parse
         parseInput(cmd, userInput);
-        performAction(); //
+        performAction(userInput); //
     }while(cmd != "EXIT");
 
     return 0;
@@ -63,7 +65,13 @@ int main() {
  * */
 void parseInput(const string str, vector<string>& vec)
 {
+    string buf;
+    stringstream ss(str);
     vec.clear(); //clear out the vector
+    while(ss >> buf)
+    {
+        vec.push_back(buf);
+    }
     //TODO: parse the input
 
 }
@@ -75,9 +83,56 @@ void parseInput(const string str, vector<string>& vec)
  * Log out
  * Grant (check logged user for granting ability for table)
  * Create user
+ * Depends on what the parser gets
  * */
-void performAction()
-{
+void performAction(vector<string> input) {
+    //for now: assume input will be 1 string
+    if (input[0] == "LOGIN") {
+        string user;
+        cout << "Enter username: ";
+        cin >> user;
+        cout << endl;
+        //get username from the user
+        login(user);
+    }
+    else if (input[0] == "LOGOUT") {
+        logout();
+    }
+    else if (input[0] == "GRANT")
+    {
+        string user;
+        string table;
+        string tmp; //hold y/n until it's converted to bool
+        bool grnt;
+        cout << "Enter user to grant access: ";
+        cin >> user;
+        cout << "Enter table name: ";
+        cin >> table;
+        cout << "With grant access? (y/n) ";
+        cin >> tmp;
+        if(tmp == "y")
+        {
+            grnt = true;
+        }
+        else grnt = false;
+        grant(user, grnt, table);
+    }
+    else if(input[0] == "CREATEUSER")
+    {
+        string name;
+        string tmp;
+        bool SO; //security officer
+        cout << "Enter the user's name: ";
+        cin >> name;
+        cout << "Is this user a security officer? (y/n) ";
+        cin >> tmp;
+        if(tmp == "y"){
+            SO = true;
+        }
+        else SO = false;
+        createUser(name, SO);
+    }
+    cin.ignore(256, '\n'); //since we are mixing cin and getline
 
 }
 
@@ -90,22 +145,25 @@ int login(const string user)
     int loc = searchVectorForUser(user, allUsers);
     if(loc == -1) //if user isn't found, return an error
     {
+        cout << "Login failed. User could not be found." << endl;
         return -1;
     }
     else
     {
         loggedUser = allUsers[loc]; //update logged in user name
+        cout << "Success -- user " << user << " logged in." << endl;
     }
     return 0; //success
 }
 
 /*
  * Log out of current user.
- * Just set to NULL.
+ * Just set to empty string.
  * */
 void logout()
 {
-    loggedUser = NULL;
+    loggedUser = "";
+    cout << "User has been logged out." << endl;
 }
 
 
@@ -149,7 +207,7 @@ int grant(string user, bool grant, string table)
 int createUser(string name, bool isSecOff)
 {
     //search vector
-    if(searchVectorForUser(name, allUsers) != -1) //if the user name exists already, we can't create the user
+    if(!allUsers.empty() && searchVectorForUser(name, allUsers) != -1) //if the user name exists already, we can't create the user
     {
         return -1;
     }
