@@ -12,6 +12,9 @@ int login(string user);
 void logout();
 int grant(string user, bool grant, string table);
 int createUser(string name, bool isSecOff);
+int createTable(string table);
+int printFTable();
+int forbidUser(string user, string table);
 int searchVectorForUser(string key, vector<string> vec);
 int searchVectorForUserAndTable(string name, string table, vector<string> names, vector<string> tables);
 bool checkSecurityOfficer(string name);
@@ -39,18 +42,19 @@ int main() {
     string cmd;
     vector<string> userInput;
 
-    cout << "Welcome! Commands understood are: \n LOGIN \n LOGOUT \n GRANT \n CREATEUSER"
+    cout << "Welcome! Commands understood are: \n LOGIN \n LOGOUT \n GRANT \n CREATEUSER \n CREATETABlE"
             << "\nType EXIT to leave.\nPlease enter your first command.\n";
-    //TODO: add a CREATETABLE option? (user becomes owner & can grant access)
 
     //while user doesn't want to quit, take input and process the command
     do
     {
+        cout << "\nCommands: \n";
+        cout << "\n LOGIN \n LOGOUT \n GRANT \n CREATEUSER \n CREATETABLE \n SOOPTIONS \n EXIT \n";
         cout << "Enter another command: " << endl;
         getline(cin, cmd); //get the line of input to parse
         parseInput(cmd, userInput);
         performAction(userInput); //
-    }while(cmd != "EXIT");
+    }while(cmd != "EXIT\n");
 
     return 0;
 }
@@ -117,6 +121,14 @@ void performAction(vector<string> input) {
         else grnt = false;
         grant(user, grnt, table);
     }
+    else if(input[0] == "CREATETABLE")
+    {
+        string table;
+        cout << "Enter the table's name: ";
+        cin >> table;
+
+        createTable(table);
+    }
     else if(input[0] == "CREATEUSER")
     {
         string name;
@@ -131,6 +143,37 @@ void performAction(vector<string> input) {
         }
         else SO = false;
         createUser(name, SO);
+    }
+    else if(input[0] == "SOOPTIONS")
+    {
+      if(checkSecurityOfficer(loggedUser))
+      {
+        cout << "\n Security Officer Options:\n";
+        cout << "\nFORBIDDENTABLE \n";
+        cout << "FORBIDUSER\n";
+        cout << "\n Please type enter a command: ";
+        string cmd;
+        vector<string> userInput;
+        getline(cin, cmd); //get the line of input to parse
+        parseInput(cmd, userInput);
+        performAction(userInput);
+
+      }
+    }
+    else if(input[0] == "FORBIDDENTABLE")
+    {
+      printFTable();
+    }
+    else if(input[0] == "FORBIDUSER")
+    {
+      string user;
+      string table;
+
+      cout << "\n Please enter the Users Name: ";
+      cin >> user;
+      cout << "\n Please enter the table to forbid the user from: ";
+      cin >> table;
+      forbidUser(user, table);
     }
     cin.ignore(256, '\n'); //since we are mixing cin and getline, we need to throw out the \n that remains
 }
@@ -188,6 +231,14 @@ int grant(string user, bool grant, string table)
         return -1;
     }
 
+    loc = searchVectorForUser(user, allUsers);
+    if(loc == -1) //if user isn't found, return an error
+    {
+        cout << "Failed. User: " << user << " could not be found." << endl;
+        return -1;
+    }
+
+
     //if we make it this far, the user is able to be added to the assigned list; add them
     assignedUsers.push_back(user);
     assignedTables.push_back(table);
@@ -197,6 +248,41 @@ int grant(string user, bool grant, string table)
     return 0; //success
 }
 
+/*
+ *Create a table as long as the table does not already exist
+ * automatically gives creating user grant access
+ */
+
+int createTable(string table)
+{
+    //check if current user has granting ability
+    int loc = searchVectorForUserAndTable(loggedUser, table, assignedUsers, assignedTables);
+
+    //check if grantee is in the forbidden list for this table
+    int loc2 = searchVectorForUserAndTable(loggedUser, table, forbiddenUsers, forbiddenTables);
+
+
+
+    if(loc == -1 && loc2 == -1){
+      assignedUsers.push_back(loggedUser);
+      assignedTables.push_back(table);
+      hasGrantAccess.push_back(1);
+      granter.push_back(loggedUser);
+    }
+
+    if(loc != -1) //if we find the table exists
+    {
+        cout << "The table " << table << " already exists." << endl;
+        return -1;
+    }
+    if(loc2 != -1) //if we find the user in the forbidden list, we can't grant access
+    {
+        cout << "User " << loggedUser << " was found in the forbidden list." << endl;
+        return -1;
+    }
+
+    return 0; //success
+}
 
 /*
  * Create a new user
@@ -229,6 +315,9 @@ int searchVectorForUser(string key, vector<string> vec)
     return -1;
 }
 
+/*
+This searches to see if a user is in the forbden table, very similar to printFTable
+*/
 int searchVectorForUserAndTable(string name, string table, vector<string> names, vector<string> tables)
 {
     for(int i = 0; i < names.size(); i++)
@@ -240,6 +329,40 @@ int searchVectorForUserAndTable(string name, string table, vector<string> names,
     }
     return -1;
 }
+
+/*
+This prints the forbidden table, very similar to searchVectorForUserAndTable but this doesnt return users and tables, only prints.
+*/
+int printFTable()
+{
+  cout << "\nFORBIDDEN TABLE:\n";
+  for(int i = 0; i < forbiddenUsers.size(); i++)
+  {
+    cout << "USER: " << forbiddenUsers[i] << " TABLE: " << forbiddenTables[i] << endl;
+    return 0;
+  }
+  if(forbiddenUsers.size() == 0)
+  {
+    cout << "\nTable is empty.";
+  }
+}
+
+
+/*
+This is the function that add's users to the forbidden table
+*/
+int forbidUser(string user, string table)
+{
+  int sizeU = forbiddenUsers.size();
+  int sizeT = forbiddenTables.size();
+
+  if(sizeU == sizeT)
+  {
+    forbiddenUsers[sizeU];
+    forbiddenTables[sizeT];
+  }
+}
+
 
 bool checkSecurityOfficer(string name)
 {
