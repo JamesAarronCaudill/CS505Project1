@@ -19,11 +19,9 @@ int printFTable();
 int forbidUser(string user, string table);
 int printSOLogs();
 /* SO Options end */
-int searchVectorForUser(string key, vector<string> vec);
+int searchVectorForKey(string key, vector<string> vec);
 int searchVectorForUserAndTable(string name, string table, vector<string> names, vector<string> tables);
 bool checkSecurityOfficer(string name);
-
-//TODO: implement security officer capabilities? Work on SO Log
 
 string loggedUser; //user we are logged in as
 vector<string> allUsers; //keep track of all users - no duplicates
@@ -42,7 +40,11 @@ vector<string> granter; //keeps track of the user who granted the user in questi
 vector< pair<string,string> > SOLogs;
 /* Produces <user, table, hasGrant, granter> */
 
-
+/*
+ Main driver function for the program.
+ Prompt the user and take in their input to pass to parsing;
+ Then perform the action the user requested.
+ */
 int main() {
     string cmd;
     vector<string> userInput;
@@ -50,7 +52,7 @@ int main() {
     cout << "Welcome! Commands understood are: \n LOGIN \n LOGOUT \n GRANT \n CREATEUSER \n CREATETABlE \n SOOPTIONS"
             << "\nType EXIT to leave.\n";
 
-    //while user doesn't want to quit, take input and process the command
+    //While user doesn't want to quit, take input and process the command
     do
     {
         cout << "\nCommands: \n";
@@ -92,12 +94,15 @@ void parseInput(const string str, vector<string>& vec)
 
 
 /*
+ * Correctly handle user commands.
  * In scope:
  * Login
  * Log out
  * Grant (check logged user for granting ability for table)
  * Create user
- * Depends on what the parser gets
+ * Create table
+ * Security officer options (if user is a SO)
+ * Depends on what the parser obtains
  * */
 void performAction(vector<string> input) {
     //for now: assume input will be 1 string
@@ -206,12 +211,12 @@ void performAction(vector<string> input) {
 }
 
 /*
- * Log in as a user found in the table.
+ * Log in as a user (must be found in the table.)
  * If user can't be found in the table, return an error.
  * */
 int login(const string user)
 {
-    int loc = searchVectorForUser(user, allUsers);
+    int loc = searchVectorForKey(user, allUsers);
     if(loc == -1) //if user isn't found, return an error
     {
         cout << "Login failed. User could not be found." << endl;
@@ -228,7 +233,7 @@ int login(const string user)
 
 /*
  * Log out of current user.
- * Just set to empty string.
+ * Just set loggedUser to an empty string.
  * */
 void logout()
 {
@@ -239,7 +244,8 @@ void logout()
 
 /*
  * Grant a user access to a table
- * May or may not have granting abilities
+ * Check for granter's granting abilities & respond accordingly
+ * Also check that the grantee is not in the forbidden table for this table.
  * */
 int grant(string user, bool grant, string table)
 {
@@ -286,7 +292,7 @@ int grant(string user, bool grant, string table)
         return -1;
     }
 
-    loc = searchVectorForUser(user, allUsers);
+    loc = searchVectorForKey(user, allUsers);
     if(loc == -1) //if user isn't found, return an error
     {
         cout << "Failed. User: " << user << " could not be found." << endl;
@@ -304,19 +310,16 @@ int grant(string user, bool grant, string table)
 }
 
 /*
- *Create a table as long as the table does not already exist
+ * Create a table as long as the table does not already exist
  * automatically gives creating user grant access
  */
-
 int createTable(string table)
 {
-    //Check is the user/table exists
-    int loc = searchVectorForUserAndTable(loggedUser, table, assignedUsers, assignedTables);
+    //Check if the table exists
+    int loc = searchVectorForKey(table, assignedTables);
 
     //check if grantee is in the forbidden list for this table
     int loc2 = searchVectorForUserAndTable(loggedUser, table, forbiddenUsers, forbiddenTables);
-
-
 
     if(loc == -1 && loc2 == -1 && loggedUser != ""){
       assignedUsers.push_back(loggedUser);
@@ -352,7 +355,7 @@ int createTable(string table)
 int createUser(string name, bool isSecOff)
 {
     //search vector
-    if(!allUsers.empty() && searchVectorForUser(name, allUsers) != -1) //if the user name exists already, we can't create the user
+    if(!allUsers.empty() && searchVectorForKey(name, allUsers) != -1) //if the user name exists already, we can't create the user
     {
         return -1;
     }
@@ -363,7 +366,7 @@ int createUser(string name, bool isSecOff)
 }
 
 //search a vector for a key; return the location or -1 if not found
-int searchVectorForUser(string key, vector<string> vec)
+int searchVectorForKey(string key, vector<string> vec)
 {
     for(int i = 0; i < vec.size(); i++)
     {
@@ -376,7 +379,8 @@ int searchVectorForUser(string key, vector<string> vec)
 }
 
 /*
-This searches to see if a user has an associated table
+ This searches to see if a user has an associated table pairing
+ Searches for <name, table> pair
 */
 int searchVectorForUserAndTable(string name, string table, vector<string> names, vector<string> tables)
 {
@@ -492,7 +496,7 @@ bool checkSecurityOfficer(string name)
 {
   if(name != "")
   {
-    int loc = searchVectorForUser(name, allUsers);
+    int loc = searchVectorForKey(name, allUsers);
     return isSecurityOfficer[loc];
   }
   return false;
