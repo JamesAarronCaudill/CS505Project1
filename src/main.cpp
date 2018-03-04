@@ -17,6 +17,7 @@ int createTable(string table);
 /* SO Options */
 int printFTable();
 int forbidUser(string user, string table);
+int printSOLogs();
 /* SO Options end */
 int searchVectorForUser(string key, vector<string> vec);
 int searchVectorForUserAndTable(string name, string table, vector<string> names, vector<string> tables);
@@ -47,7 +48,7 @@ int main() {
     vector<string> userInput;
 
     cout << "Welcome! Commands understood are: \n LOGIN \n LOGOUT \n GRANT \n CREATEUSER \n CREATETABlE \n SOOPTIONS"
-            << "\nType EXIT to leave.\nPlease enter your first command.\n";
+            << "\nType EXIT to leave.\n";
 
     //while user doesn't want to quit, take input and process the command
     do
@@ -56,9 +57,14 @@ int main() {
         cout << "\n  1) LOGIN \n  2) LOGOUT \n  3) GRANT \n  4) CREATEUSER \n  5) CREATETABLE \n  6) SOOPTIONS \n  7) EXIT \n";
         cout << "Enter another command: " << endl;
         getline(cin, cmd); //get the line of input to parse
-        parseInput(cmd, userInput);
-        performAction(userInput); //
-    }while(cmd != "EXIT" || cmd != "7");
+
+        //Makes sure that if the user presses enter no seg fault will occur.
+        if(cmd != "")
+        {
+          parseInput(cmd, userInput);
+          performAction(userInput);
+        }
+    }while(true);
 
     return 0;
 }
@@ -155,7 +161,7 @@ void performAction(vector<string> input) {
         cout << "\n Security Officer Options:\n";
         cout << "\n  8) FORBIDDENTABLE \n";
         cout << "  9) FORBIDUSER\n";
-        cout << " 10) SOLOGS\n"
+        cout << " 10) SOLOGS\n";
         cout << "\n Please type enter a command: ";
         string cmd;
         vector<string> userInput;
@@ -171,6 +177,10 @@ void performAction(vector<string> input) {
       {
         cout << "\nYou must login, or create a User to access Security Officer Options" << endl;
       }
+    }
+    else if(input[0] == "7" || input[0] == "EXIT")
+    {
+      exit(0);
     }
     else if((input[0] == "FORBIDDENTABLE" || input[0] == "8") && checkSecurityOfficer(loggedUser))
     {
@@ -211,6 +221,7 @@ int login(const string user)
     {
         loggedUser = allUsers[loc]; //update logged in user name
         cout << "Success -- user " << user << " logged in." << endl;
+        return 0;
     }
     return 0; //success
 }
@@ -235,13 +246,11 @@ int grant(string user, bool grant, string table)
     //check if current user has granting ability
     int loc = searchVectorForUserAndTable(loggedUser, table, assignedUsers, assignedTables);
     int logSize = SOLogs.size();
-    if(loc == -1 || !hasGrantAccess[loc]){
+    if(loc == -1 || !hasGrantAccess[loc] || loggedUser == ""){
         //error -- user is not able to grant for this table
         cout << "User " << loggedUser << " cannot grant access to table " << table << endl;
-        SOLogs[logSize].first = loggedUser;
-        SOLogs[logSize].second = ("User " + loggedUser + " attempted to add " + user + " to grant access to " + table + " without the permision." );
+        SOLogs.push_back(make_pair(loggedUser, ("User " + loggedUser + " attempted to add " + user + " to grant access to " + table + " without the permision." )));
         return 0;
-        return -1;
     }
 
     //check if grantee is in the forbidden list for this table
@@ -249,6 +258,31 @@ int grant(string user, bool grant, string table)
     if(loc != -1) //if we find the user in the forbidden list, we can't grant access
     {
         cout << "User " << user << " was found in the forbidden list." << endl;
+        if(checkSecurityOfficer(loggedUser))
+        {
+          cout << "Did you want to remove user from the forbidden table, and add them to the assigned table." << endl;
+          cout << "1) YES\n";
+          cout << "2) NO\n";
+
+          string input;
+          cin >> input;
+
+          if(input == "1" || input == "YES")
+          {
+
+            forbiddenUsers.erase(forbiddenUsers.begin() - loc);
+            forbiddenTables.erase(forbiddenTables.begin() - loc);
+            assignedUsers.push_back(user);
+            assignedTables.push_back(table);
+
+
+            return 0;
+          }
+          if(input == "2" || input == "NO")
+          {
+            return 0;
+          }
+        }
         return -1;
     }
 
@@ -284,11 +318,12 @@ int createTable(string table)
 
 
 
-    if(loc == -1 && loc2 == -1){
+    if(loc == -1 && loc2 == -1 && loggedUser != ""){
       assignedUsers.push_back(loggedUser);
       assignedTables.push_back(table);
       hasGrantAccess.push_back(1);
       granter.push_back(loggedUser);
+      return 0;
     }
 
     if(loc != -1) //if we find the table exists
@@ -300,6 +335,10 @@ int createTable(string table)
     {
         cout << "User " << loggedUser << " was found in the forbidden list." << endl;
         return -1;
+    }
+    if(loggedUser == "")
+    {
+      cout << "\nYou must log in to create a table" << endl;
     }
 
     return 0; //success
@@ -360,12 +399,13 @@ int printFTable()
   for(int i = 0; i < forbiddenUsers.size(); i++)
   {
     cout << "USER: " << forbiddenUsers[i] << " TABLE: " << forbiddenTables[i] << endl;
-    return 0;
   }
   if(forbiddenUsers.size() == 0)
   {
     cout << "\nTable is empty.";
+    return 0;
   }
+  return 0;
 }
 
 
@@ -385,8 +425,9 @@ int forbidUser(string user, string table)
     {
       if(sizeU == sizeT)
       {
-        forbiddenUsers[sizeU] = user;
-        forbiddenTables[sizeT] = table;
+        forbiddenUsers.push_back(user);
+        forbiddenTables.push_back(table);
+        return 0;
       }
     }
     if(loc2 != -1)
@@ -403,12 +444,11 @@ int forbidUser(string user, string table)
         //This makes sure that the vector is not off sized. This should never fail.
         if(sizeU == sizeT)
         {
-          forbiddenUsers[sizeU] = user;
-          forbiddenTables[sizeT] = table;
+          forbiddenUsers.push_back(user);
+          forbiddenTables.push_back(table);
           assignedUsers.erase(assignedUsers.begin() - loc2);
           assignedTables.erase(assignedTables.begin() - loc2);
-          SOLogs[logSize].first = loggedUser;
-          SOLogs[logSize].second = ("The Security officer " + loggedUser + " added " + user + " to the forbidden table, when they were on the assigned table previously.");
+          SOLogs.push_back(make_pair(loggedUser, ("The Security officer " + loggedUser + " added " + user + " to the forbidden table, when they were on the assigned table previously.")));
           return 0;
         }
       }
@@ -429,12 +469,22 @@ int forbidUser(string user, string table)
   if(loc != -1)
   {
     cout << "\nThis user is already in the forbidden table for this table!\n";
+    return 0;
   }
+  return 0;
 }
 
 int printSOLogs()
 {
-  
+  for(int i = 0; i < SOLogs.size(); i++)
+  {
+    cout << "      User: " << SOLogs[i].first << " Action: " << SOLogs[i].second << "\n" << endl;
+  }
+  if(SOLogs.size() == 0)
+  {
+    cout << "\n This table is empty \n";
+  }
+  return 0;
 }
 
 
@@ -445,4 +495,5 @@ bool checkSecurityOfficer(string name)
     int loc = searchVectorForUser(name, allUsers);
     return isSecurityOfficer[loc];
   }
+  return false;
 }
