@@ -1,0 +1,94 @@
+CS 505 Project 1 Test Cases:
+
+	Follow this file to see sample test cases, there will be a file attached executing them.
+
+Thank you.
+
+
+
+CREATEUSER or 4:
+
+Aarron, SO = Y
+Marek SO = N
+
+LOGIN or 1:
+Aarron
+
+CREATETABLE or 5:
+AarronsTable, Creator: Aarron
+
+SOOPTIONS or 6:
+
+FORBIDDENTABLE or 8:
+Table is Empty
+
+SOOPTIONS or 6:
+
+FORBIDUSER or 9:
+Marek from Aarrons Table
+
+SOOPTIONS or 6:
+
+FORBIDDENTABLE or 8:
+
+FORBIDDEN TABLE:
+USER: Marek TABLE: AarronsTable
+
+LOGOUT or 2:
+
+CREATEUSER or 4:
+Kristina, SO = y
+
+CREATETABLE or 5:
+KristinasTable, Creator: Kristina
+
+You must login to create a table
+
+LOGIN or 1:
+Kristina
+
+CREATETABLE or 5:
+KristinasTable, Creator: Kristina
+
+GRANT or 3:
+Access to Aarron to KristinasTable without grant access.
+
+SOOPTIONS or 6:
+
+FORBIDUSER or 9:
+Marek from KristinasTable
+
+SOOPTIONS or 6:
+
+FORBIDDENTABLE or 8:
+
+FORBIDDEN TABLE:
+USER: Marek TABLE: AarronsTable
+USER: Marek TABLE: KristinasTable
+
+LOGOUT or 2:
+
+LOGIN or 1:
+Aarron
+
+GRANT or 3:
+Marek to AarronsTable without grant access
+
+	**Checks if Aarron is SO**
+	Did you want to remove user from the forbidden table, and add them to the assigned table.
+	1) YES
+	2) NO
+
+	YES
+
+SOOPTIONS or 6:
+
+SOLOGS or 10:
+
+	User: Aarron Action: The Security officer Aarron added Marek to the AarronsTable, when they were on the forbidden table previously.
+
+
+
+EXIT or 7:
+
+
